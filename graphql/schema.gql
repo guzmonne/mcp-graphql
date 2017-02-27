@@ -117,10 +117,10 @@ type Location {
 
 type AP {
   ID: ID!
+  Mac: String!
   Location: Location
   LocationID: ID!
   LocationName: String!
-  Mac: String!
   Name: String!
   Tags: [String]
   UpdatedAt: Float

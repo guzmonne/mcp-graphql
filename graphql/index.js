@@ -1,5 +1,3 @@
-const fs = require('fs')
-const path = require('path')
 const graphql = require('graphql')
 const GraphQLTools = require('graphql-tools')
 const Resolvers = require('./resolver.js')

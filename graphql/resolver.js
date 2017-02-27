@@ -2,11 +2,27 @@ const DocumentClient = require('../modules/Aws.js').DocumentClient
 const Model = require('../modules/Model.js')
 const TABLE_PREFIX = require('../variables.js').TABLE_PREFIX
 
-const log = (v) => {
-  console.log(v)
-  return v
-}
+/** HELPER FUNCTIONS */
+/**
+ * @function jtob
+ * @description Converts an object to JSON and then encodes it on base64.
+ * @param {Object} object Target to convert.
+ * @returns {String} Target converted to JSON and encoded on base64.
+ */
+const jtob = (object) => (
+  new Buffer(JSON.stringify(object || '')).toString('base64')
+)
+/**
+ * @function btoj
+ * @description Converts a base64 stored JSON object to a JS object.
+ * @param {Strgin} base64string Target to convert.
+ * @returns {Object} Decoded JS object.
+ */
+const btoj = (base64string) => (
+  JSON.parse(new Buffer(base64string, 'base64').toString('ascii'))
+)
 
+/** MODELS */
 const Locations = Model({
   Table: TABLE_PREFIX + 'locations',
   HashKey: 'ID',
@@ -31,15 +47,17 @@ const SessionLogs = Model({
   HashKey: 'ID',
   DocumentClient: DocumentClient,
 })
-
-const jtob = (string) => (
-  new Buffer(JSON.stringify(string || '')).toString('base64')
-)
-
-const btoj = (base64string) => (
-  JSON.parse(new Buffer(base64string, 'base64').toString('ascii'))
-)
-
+/**
+ * @function SessionLog.between
+ * @description Gets items from the SessionLog table between different dates
+ * @param {Object} params       Configuration object.
+ * @param {Number} params.years List of years from which to query the table.
+ * @param {Number} params.start Start date timestamp.
+ * @param {Number} params.end   End date timestamp.
+ * @param {String} params.name  Name of the parameter to filter by.
+ * @param {Any}    params.value Value of the parameter to filter by
+ * @return {Promise} Thenable promise with the result of the requests.
+ */
 SessionLogs.between = (params) => (
   Promise
   .all(
@@ -78,103 +96,7 @@ SessionLogs.between = (params) => (
   }))
 )
 
-const resolveFunctions = {
-  Query: {
-    Locations: () => ( 
-      Locations
-      .scan()
-      .then(response => response.Items)
-    ),
-    APs: () => ( 
-      APs
-      .scan()
-      .then(response => response.Items)
-    ),
-    Profiles: () => ( 
-      Profiles
-      .scan()
-      .then(response => response.Items)      
-    ),
-    SessionLogs: (_, query) => (
-      SessionLogs.between(query.params)
-    ),
-  },
-  Profile: {
-    SessionLogs: (profile, query) => (
-      SessionLogs.between(Object.assign(query.params, {
-        name: 'ClientID',
-        value: profile.ID,
-      }))
-    )
-  },
-  Location: {
-    SessionLogs: (location, query) => (
-      SessionLogs.between(Object.assign(query.params, {
-        name: 'LocationID',
-        value: location.ID,
-      }))
-    ),
-    APs: (location, query) => (
-      APs.scan(Object.assign({
-        expression: '#LocationID = :locationID',
-        names: {
-          '#LocationID': 'LocationID',
-        },
-        values: {
-          ':locationID': location.ID,
-        },
-      }, 
-        query && query.params && query.params.limit ? {limit: query.params.limit} : {},
-        query && query.params && query.params.from ? {startKey: btoj(query.params.from)} : {}
-      ))
-      .then(response => ({
-        List: response.Items,
-        Count: response.Items.length,
-        LastEvaluatedKey: response.LastEvaluatedKey
-                          ? [jtob(response.LastEvaluatedKey)]
-                          : [undefined],
-      }))
-    )
-  },
-  AP: {
-    Location: (ap) => (
-      Locations
-      .get(ap.LocationID)
-      .then(response => response.Item)
-    ),
-    SessionLogs: (ap, query) => (
-      SessionLogs.between(Object.assign(query.params, {
-        name: 'NodeMac',
-        value: ap.Mac,
-      }))
-    )
-  },
-  SessionLog: {
-    Client: (log) => (
-      Profiles
-      .get(log.ClientID, log.Provider)
-      .then(response => response.Item)
-    ),
-    Node: (log) => (
-      APs
-      .get(log.NodeMac)
-      .then(response => response.Item)
-    ),
-    Location: (log) => (
-      Locations
-      .get(log.LocationID)
-      .then(response => response.Item)
-    )
-  }
-  /*
-  Mutation: {
-    UpvotePost(_, {ID}){
-      return DB.Posts.upvote(ID)
-    }
-  },
-  */
-}
-
+/** RESOLVER FUNCTIONS */
 exports = module.exports = {
   Query: {
     Locations: () => ({
@@ -263,4 +185,70 @@ exports = module.exports = {
       Between: (args) => SessionLogs.between(args.params)
     }),
   },
+  Profile: {
+    SessionLogs: (profile, args) => (
+      SessionLogs.between(Object.assign(args.params, {
+        name: 'ClientID',
+        value: profile.ID,
+      }))
+    )
+  },
+  Location: {
+    SessionLogs: (location, args) => (
+      SessionLogs.between(Object.assign(args.params, {
+        name: 'LocationID',
+        value: location.ID,
+      }))
+    ),
+    APs: (location, args) => (
+      APs.scan(Object.assign({
+        expression: '#LocationID = :locationID',
+        names: {
+          '#LocationID': 'LocationID',
+        },
+        values: {
+          ':locationID': location.ID,
+        },
+      }, 
+        args.params
+      ))
+      .then(response => ({
+        List: response.Items,
+        Count: response.Items.length,
+        LastEvaluatedKey: response.LastEvaluatedKey
+                          ? [jtob(response.LastEvaluatedKey)]
+                          : [undefined],
+      }))
+    )
+  },
+  AP: {
+    Location: (ap) => (
+      Locations
+      .get(ap.LocationID)
+      .then(response => response.Item)
+    ),
+    SessionLogs: (ap, args) => (
+      SessionLogs.between(Object.assign(args.params, {
+        name: 'NodeMac',
+        value: ap.Mac,
+      }))
+    )
+  },
+  SessionLog: {
+    Client: (log) => (
+      Profiles
+      .get(log.ClientID, log.Provider)
+      .then(response => response.Item)
+    ),
+    Node: (log) => (
+      APs
+      .get(log.NodeMac)
+      .then(response => response.Item)
+    ),
+    Location: (log) => (
+      Locations
+      .get(log.LocationID)
+      .then(response => response.Item)
+    )
+  }
 }

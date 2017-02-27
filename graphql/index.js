@@ -1,12 +1,12 @@
 const fs = require('fs')
 const path = require('path')
+const graphql = require('graphql')
 const GraphQLTools = require('graphql-tools')
 const Resolvers = require('./resolver.js')
-
-const Schema = fs.readFileSync(path.resolve(__dirname, './schema.gql'), {encoding: 'utf-8'})
+const Schema = require('./schema.js')
 
 exports = module.exports = GraphQLTools.makeExecutableSchema({
-  typeDefs: Schema,
+  typeDefs: graphql.printSchema(Schema),
   resolvers: Resolvers,
   logger: { log: (e) => console.log(e) },
   allowUndefinedInResolve: true,

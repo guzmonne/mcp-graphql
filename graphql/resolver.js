@@ -2,6 +2,11 @@ const DocumentClient = require('../modules/Aws.js').DocumentClient
 const Model = require('../modules/Model.js')
 const TABLE_PREFIX = require('../variables.js').TABLE_PREFIX
 
+const log = (v) => {
+  console.log(v)
+  return v
+}
+
 const Locations = Model({
   Table: TABLE_PREFIX + 'locations',
   HashKey: 'ID',
@@ -67,7 +72,7 @@ SessionLogs.between = (params) => (
           .map(response => response.Items)
           .reduce((acc, result) => acc.concat(result), []),
     Count: responses.reduce((acc, response) => acc + response.Items.length, 0),
-    LastEvaluatedKeys: responses.map(response => response.LastEvaluatedKey
+    LastEvaluatedKey: responses.map(response => response.LastEvaluatedKey
                                                  ? jtob(response.LastEvaluatedKey)
                                                  : undefined),
   }))
@@ -126,9 +131,8 @@ const resolveFunctions = {
         List: response.Items,
         Count: response.Items.length,
         LastEvaluatedKey: response.LastEvaluatedKey
-                          ? jtob(response.LastEvaluatedKey)
-                          : undefined,
-        LastKey: response.LastEvaluatedKey
+                          ? [jtob(response.LastEvaluatedKey)]
+                          : [undefined],
       }))
     )
   },
@@ -171,4 +175,92 @@ const resolveFunctions = {
   */
 }
 
-exports = module.exports = resolveFunctions
+exports = module.exports = {
+  Query: {
+    Locations: () => ({
+      Collection: (args) => ( 
+        Locations
+        .scan(Object.assign(
+          args.params,
+          args.params && args.params.from 
+            ? {from: btoj(args.params.from)}
+            : {}
+        ))
+        .then(response => ({
+          List: response.Items,
+          Count: response.Items.length,
+          LastEvaluatedKey: [jtob(response.LastEvaluatedKey)],
+        }))      
+      ),
+      Model: (args) => (
+        Locations
+        .get(btoj(args.id).ID)
+        .then(response => response.Item)
+      )
+    }),
+    Profiles: () => ({
+      Collection: (args) => ( 
+        Profiles
+        .scan(Object.assign(
+          args.params,
+          args.params && args.params.from 
+            ? {from: btoj(args.params.from)}
+            : {}
+        ))
+        .then(response => ({
+          List: response.Items,
+          Count: response.Items.length,
+          LastEvaluatedKey: [jtob(response.LastEvaluatedKey)],
+        }))      
+      ),
+      Model: (args) => (
+        Profiles
+        .get(btoj(args.id).ID, btoj(args.id).Provider)
+        .then(response => response.Item)
+      )
+    }),
+    APs: () => ({
+      Collection: (args) => ( 
+        APs
+        .scan(Object.assign(
+          args.params,
+          args.params && args.params.from 
+            ? {from: btoj(args.params.from)}
+            : {}
+        ))
+        .then(response => ({
+          List: response.Items,
+          Count: response.Items.length,
+          LastEvaluatedKey: [jtob(response.LastEvaluatedKey)],
+        }))      
+      ),
+      Model: (args) => (
+        APs
+        .get(btoj(args.id).Mac)
+        .then(response => response.Item)
+      )
+    }),
+    SessionLogs: () => ({
+      Collection: (args) => ( 
+        SessionLogs
+        .scan(Object.assign(
+          args.params,
+          args.params && args.params.from 
+            ? {from: btoj(args.params.from)}
+            : {}
+        ))
+        .then(response => ({
+          List: response.Items,
+          Count: response.Items.length,
+          LastEvaluatedKey: [jtob(response.LastEvaluatedKey)],
+        }))      
+      ),
+      Model: (args) => (
+        SessionLogs
+        .get(btoj(args.id).ID)
+        .then(response => response.Item)
+      ),
+      Between: (args) => SessionLogs.between(args.params)
+    }),
+  },
+}

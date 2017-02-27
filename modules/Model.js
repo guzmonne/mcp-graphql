@@ -187,15 +187,20 @@ function Model(config) {
    * @param {Object}  params Query configuration object. 
    * @param {String!} params.expression Expression complying with all KeyConditionExpression rules.
    * @param {String}  params.filter     Expression to filter DynamoDB results.
-   * @param {Object}  params.names      Dictionary of all the names ysed on the expression and filter attributes.
-   * @param {Object}  params.values     Dictionary of all the named values used on the expression and filter attribute.
+   * @param {Object}  params.names      Dictionary of all the names ysed on the expression and 
+   *                                    filter attributes.
+   * @param {Object}  params.values     Dictionary of all the named values used on the expression 
+   *                                    and filter attribute.
    * @param {Array}   params.attributes List of attributes to pick from the responses.
-   * @param {Object}  params.startKey   Key indicating where the query should start looking on the table.
-   * @param {String}  params.indexName  The name of the index to use. If not provided it will be run over the table.
-   * @param {Number}  params.limit      Indicates the number of results that will be returned at most by the query
-   *                                    If not defined then the result will be at most 1 MB of data. This option will
-   *                                    be over-ruled by DynamoDB if the results reach 1 MB of data before reaching
-   *                                    the limit.
+   * @param {Object}  params.from       Key indicating where the query should start looking on the 
+   *                                    table.
+   * @param {String}  params.indexName  The name of the index to use. If not provided it will be 
+   *                                    run over the table.
+   * @param {Number}  params.limit      Indicates the number of results that will be returned at    
+   *                                    most by the query If not defined then the result will be at 
+   *                                    most 1 MB of data. This option will be over-ruled by 
+   *                                    DynamoDB if the results reach 1 MB of data before 
+   *                                    reachingthe limit.
    * @returns {Promise} Thenble promise with the results of the query request.
    */
   const _query = (params) => (
@@ -211,7 +216,7 @@ function Model(config) {
     },
       params.indexName ? {IndexName: params.indexName} : {},
       params.filter ? {FilterExpression: params.filter} : {},
-      params.startKey ? {ExclusiveStartKey: params.startKey} : {},
+      params.from ? {ExclusiveStartKey: params.from} : {},
       params.attributes ? {AttributesToGet: params.attributes} : {},
       params.limit ? {Limit: params.limit} : {}
     ))
@@ -225,16 +230,21 @@ function Model(config) {
    *              - Indexed: Run on an index indicated by the indexName query attribute.
    *              - Picked: Only fields inculded in the query attributes attribute will be returned.
    * @param {Object}  params Query configuration object. 
-   * @param {String!}   expression Expression complying with all KeyConditionExpression rules.
-   * @param {Object}    values     Dictionary of all the named values used on the expression attribute.
-   * @param {Object}    names      Dictionary of all the named keys used on the expression attribute.
-   * @param {Array}     attributes List of attributes to pick from the responses.
-   * @param {Object}    startKey   Key indicating where the query should start looking on the table.
-   * @param {String}    indexName  The name of the index to use. If not provided it will be run over the table.
-   * @param {Number}    limit      Indicates the number of results that will be returned at most by the query
-   *                               If not defined then the result will be at most 1 MB of data. This option will
-   *                               be over-ruled by DynamoDB if the results reach 1 MB of data before reaching
-   *                               the limit.
+   * @param {String!} params.expression Expression complying with all KeyConditionExpression rules.
+   * @param {Object}  params.values     Dictionary of all the named values used on the expression 
+   *                                    attribute.
+   * @param {Object}  params.names      Dictionary of all the named keys used on the expression 
+   *                                    attribute.
+   * @param {Array}   params.attributes List of attributes to pick from the responses.
+   * @param {Object}  params.from       Key indicating where the query should start looking on the 
+   *                                    table.
+   * @param {String}  params.indexName  The name of the index to use. If not provided it will be 
+   *                                    run over the table.
+   * @param {Number}  params.limit      Indicates the number of results that will be returned at 
+   *                                    most by the query If not defined then the result will be at 
+   *                                    most 1 MB of data. This option will be over-ruled by 
+   *                                    DynamoDB if the results reach 1 MB of data before reaching 
+   *                                    the limit.
    * @returns {Promise} Thenble promise with the results of the scan request.
    */
   const _scan = (params) => (
@@ -245,7 +255,7 @@ function Model(config) {
       params && params.expression ? {FilterExpression: params.expression} : {},
       params && params.values ? {ExpressionAttributeValues: params.values} : {},
       params && params.names ? {ExpressionAttributeNames: params.names} : {},
-      params && params.startKey ? {ExclusiveStartKey: params.startKey} : {},
+      params && params.from ? {ExclusiveStartKey: params.from} : {},
       params && params.indexName ? {IndexName: params.indexName} : {},
       params && params.limit ? {Limit: params.limit} : {},
       params && params.attributes ? {AttributesToGet: params.attributes} : {}

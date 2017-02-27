@@ -1,0 +1,175 @@
+#########
+# ENUMs #
+#########
+enum Gender {
+  male
+  female
+}
+#############
+# Key Types #
+#############
+type APKey {
+  Mac: ID!
+}
+
+type ProfileKey {
+  ID: ID!
+  Provider: String!
+}
+
+type SessionLogKey {
+  ID: ID!
+}
+
+type LocationKey {
+  ID: ID!
+}
+###############
+# Model Types #
+###############
+union Model = Profile | Location | AP | SessionLog
+union Key = ProfileKey | LocationKey | APKey | SessionLogKey
+###############
+# Query Types #
+###############
+interface Collection {
+  List: [Model]!
+  Count: Int!
+  LastEvaluatedKey: Key
+}
+
+type SessionLogBetweenCollection implements Collection {
+  List: [SessionLog]
+  Count: Int
+  LastEvaluatedKeys: [ID]
+}
+
+type ProfileCollection implements Collection {
+  List: [Profile]!
+  Count: Int!
+  LastEvaluatedKey: ProfileKey
+}
+
+type LocationCollection implements Collection {
+  List: [Location]!
+  Count: Int!
+  LastEvaluatedKey: LocationKey
+}
+
+type APCollection implements Collection {
+  List: [AP]!
+  Count: Int!
+  LastEvaluatedKey: APKey
+}
+
+type SessionLogCollection implements Collection {
+  List: [SessionLog]!
+  Count: Int!
+  LastEvaluatedKey: SessionLogKey
+}
+###############
+# Input Types #
+###############
+input Between {
+  years: [Int!]!
+  start: Float
+  end: Float
+}
+
+input Pagination {
+  limit: Int
+  from: ID
+}
+
+input ProfileKeyInput {
+  ID: ID!
+  Provider: String!
+}
+##############
+# Main Types #
+##############
+type Profile {
+  ID: ID!
+  Provider: String!
+  Name: String
+  Email: String
+  Gender: Gender
+  Age: String
+  UpdatedAt: Float
+  CreatedAt: Float
+  DeviceMac: String
+  Document: String
+  Picture: String
+  SessionLogs(params: Between!): SessionLogBetweenCollection
+}
+
+type Location {
+  ID: ID!
+  Name: String!
+  Lat: Float!
+  Lng: Float!
+  Name: String!
+  UpdatedAt: Float
+  CreatedAt: Float
+  APs(params: Pagination): APCollection
+  SessionLogs(params: Between!): SessionLogBetweenCollection
+}
+
+type AP {
+  ID: ID!
+  Location: Location
+  LocationID: ID!
+  LocationName: String!
+  Mac: String!
+  Name: String!
+  Tags: [String]
+  UpdatedAt: Float
+  CreatedAt: Float
+  SessionLogs(params: Between!): SessionLogBetweenCollection
+}
+
+type SessionLog {
+  ID: ID!
+  Client: Profile
+  ClientID: ID
+  Provider: String
+  ClientMac: String
+  Gender: Gender
+  Hour: Float
+  DayOfMonth: Float
+  DayOfYear: Float
+  Week: Float
+  Month: Float
+  Year: Float
+  Timestamp: Float
+  Location: Location
+  LocationID: ID
+  LocationName: String
+  Node: AP
+  NodeMac: ID
+  NodeName: String
+  Tags: [String]
+  UpdatedAt: Float
+  CreatedAt: Float
+}
+###################
+# Root Query Type #
+###################
+type Query {
+  Profiles: {
+    Collection: ProfileCollection
+    Model(id: ProfileKeyInput!): Profile
+  }
+  APs: [AP]
+  Locations: [Location]
+  SessionLogs(params: Between!): SessionLogBetweenCollection
+}
+#####################
+# Schema definition #
+#####################
+schema {
+  query: Query
+}
+#######
+# End #
+#######

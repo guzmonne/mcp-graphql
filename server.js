@@ -1,6 +1,6 @@
 const express = require('express')
 const graphqlHTTP = require('express-graphql')
-const schema = require('./schema/index.js')
+const schema = require('./graphql/')
 const {PORT} = require('./variables.js')
 const {RUNNING} = require('./messages.js')
 const loggingMiddleware = require('./middleware/loggingMiddleware.js')

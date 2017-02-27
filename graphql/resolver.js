@@ -103,7 +103,7 @@ exports = module.exports = {
       Collection: (args) => ( 
         Locations
         .scan(Object.assign(
-          args.params,
+          args && args.params ? args.params : {},
           args.params && args.params.from 
             ? {from: btoj(args.params.from)}
             : {}
@@ -124,7 +124,7 @@ exports = module.exports = {
       Collection: (args) => ( 
         Profiles
         .scan(Object.assign(
-          args.params,
+          args && args.params ? args.params : {},
           args.params && args.params.from 
             ? {from: btoj(args.params.from)}
             : {}
@@ -145,7 +145,7 @@ exports = module.exports = {
       Collection: (args) => ( 
         APs
         .scan(Object.assign(
-          args.params,
+          args && args.params ? args.params : {},
           args.params && args.params.from 
             ? {from: btoj(args.params.from)}
             : {}
@@ -166,7 +166,7 @@ exports = module.exports = {
       Collection: (args) => ( 
         SessionLogs
         .scan(Object.assign(
-          args.params,
+          args && args.params ? args.params : {},
           args.params && args.params.from 
             ? {from: btoj(args.params.from)}
             : {}
@@ -187,7 +187,9 @@ exports = module.exports = {
   },
   Profile: {
     SessionLogs: (profile, args) => (
-      SessionLogs.between(Object.assign(args.params, {
+      SessionLogs.between(Object.assign(
+        args && args.params ? args.params : {}, 
+      {
         name: 'ClientID',
         value: profile.ID,
       }))
@@ -195,7 +197,9 @@ exports = module.exports = {
   },
   Location: {
     SessionLogs: (location, args) => (
-      SessionLogs.between(Object.assign(args.params, {
+      SessionLogs.between(Object.assign(
+        args && args.params ? args.params : {}, 
+      {
         name: 'LocationID',
         value: location.ID,
       }))
@@ -228,7 +232,9 @@ exports = module.exports = {
       .then(response => response.Item)
     ),
     SessionLogs: (ap, args) => (
-      SessionLogs.between(Object.assign(args.params, {
+      SessionLogs.between(Object.assign(
+        args && args.params ? args.params : {}, 
+      {
         name: 'NodeMac',
         value: ap.Mac,
       }))
